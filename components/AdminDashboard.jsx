@@ -18,7 +18,7 @@ const TABS = [
 ];
 
 export default function AdminDashboard() {
-    const { user, userProfile, logout } = useAuth();
+    const { user, userProfile, logout, resetPassword } = useAuth();
     const searchParams = useSearchParams();
     const activeTab = searchParams.get('tab') || 'overview';
 
@@ -277,7 +277,13 @@ function UsersTab({ users, onUpdateRole, onRefresh, loading }) {
 
             if (!res.ok) throw new Error(data.error);
 
-            alert(`User ${newUser.name} created! Password: kickstart2026!`);
+            try {
+                await resetPassword(newUser.email);
+                alert(`User ${newUser.name} created! Password reset email sent to ${newUser.email}.`);
+            } catch (emailErr) {
+                console.error("Reset email failed:", emailErr);
+                alert(`User created, but failed to send email. Manual reset required.`);
+            }
             setIsAddUserOpen(false);
             setNewUser({ name: '', email: '', role: 'active_student' });
             if (onRefresh) onRefresh();
