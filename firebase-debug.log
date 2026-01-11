@@ -1,0 +1,21 @@
+[debug] [2026-01-11T18:22:40.688Z] ----------------------------------------------------------------------
+[debug] [2026-01-11T18:22:40.689Z] Command:       /usr/local/bin/node /Users/sigrun/.npm/_npx/7750544ccf494d8b/node_modules/.bin/firebase projects:list
+[debug] [2026-01-11T18:22:40.689Z] CLI Version:   15.2.1
+[debug] [2026-01-11T18:22:40.689Z] Platform:      darwin
+[debug] [2026-01-11T18:22:40.689Z] Node Version:  v24.12.0
+[debug] [2026-01-11T18:22:40.689Z] Time:          Sun Jan 11 2026 18:22:40 GMT+0000 (Greenwich Mean Time)
+[debug] [2026-01-11T18:22:40.689Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-01-11T18:22:40.690Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2026-01-11T18:22:40.704Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-01-11T18:22:40.708Z] Error: Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information.
+    at GoogleAuth.getApplicationDefaultAsync (/Users/sigrun/.npm/_npx/7750544ccf494d8b/node_modules/google-auth-library/build/src/auth/googleauth.js:287:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async GoogleAuth._GoogleAuth_determineClient (/Users/sigrun/.npm/_npx/7750544ccf494d8b/node_modules/google-auth-library/build/src/auth/googleauth.js:834:32)
+    at async GoogleAuth.getClient (/Users/sigrun/.npm/_npx/7750544ccf494d8b/node_modules/google-auth-library/build/src/auth/googleauth.js:698:20)
+    at async GoogleAuth.getAccessToken (/Users/sigrun/.npm/_npx/7750544ccf494d8b/node_modules/google-auth-library/build/src/auth/googleauth.js:722:24)
+    at async autoAuth (/Users/sigrun/.npm/_npx/7750544ccf494d8b/node_modules/firebase-tools/lib/requireAuth.js:28:19)
+    at async Object.requireAuth [as fn] (/Users/sigrun/.npm/_npx/7750544ccf494d8b/node_modules/firebase-tools/lib/requireAuth.js:90:20)
+    at async /Users/sigrun/.npm/_npx/7750544ccf494d8b/node_modules/firebase-tools/lib/command.js:261:17
+[error] 
+[error] Error: Failed to authenticate, have you run firebase login?
