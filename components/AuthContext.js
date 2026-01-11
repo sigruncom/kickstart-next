@@ -33,18 +33,6 @@ export const AuthProvider = ({ children }) => {
 
             try {
                 if (user) {
-                    // OPTIMIZATION: Instant load for Demo Admin
-                    if (user.email?.toLowerCase() === 'admin@demo.com') {
-                        console.log("AuthContext: Demo Admin detected");
-                        setUserProfile({
-                            email: 'admin@demo.com',
-                            role: 'admin',
-                            name: 'Demo Admin',
-                            createdAt: new Date().toISOString()
-                        });
-                        return;
-                    }
-
                     // Fetch user profile from Firestore with timeout race
                     try {
                         const profilePromise = getDoc(doc(db, 'users', user.uid));
@@ -55,15 +43,11 @@ export const AuthProvider = ({ children }) => {
                         const userDoc = await Promise.race([profilePromise, timeoutPromise]);
 
                         if (userDoc.exists()) {
-                            const data = userDoc.data();
-                            if (user.email?.toLowerCase() === 'admin@demo.com') {
-                                data.role = 'admin';
-                            }
-                            setUserProfile(data);
+                            setUserProfile(userDoc.data());
                         } else {
                             const newProfile = {
                                 email: user.email,
-                                role: user.email === 'admin@demo.com' ? 'admin' : 'active_student',
+                                role: 'active_student',
                                 createdAt: new Date().toISOString()
                             };
                             try {
@@ -77,7 +61,7 @@ export const AuthProvider = ({ children }) => {
                         console.error("Error fetching user profile:", error);
                         setUserProfile({
                             email: user.email,
-                            role: user.email === 'admin@demo.com' ? 'admin' : 'active_student'
+                            role: 'active_student'
                         });
                     }
                 } else {
