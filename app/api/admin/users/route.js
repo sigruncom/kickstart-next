@@ -74,6 +74,9 @@ export async function POST(request) {
         }
 
         // 1. Create in Firebase Auth
+        // Generate a secure random password
+        const tempPassword = crypto.randomBytes(12).toString('hex') + 'Aa1!';
+
         let userRecord;
         try {
             console.log('[Admin POST] Attempting adminAuth.createUser...');
@@ -81,7 +84,7 @@ export async function POST(request) {
                 email,
                 emailVerified: false,
                 displayName: name,
-                password: 'kickstart2026!' // Default password
+                password: tempPassword
             });
             console.log(`[Admin POST] Auth User created: ${userRecord.uid}`);
         } catch (authError) {
