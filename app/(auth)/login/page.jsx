@@ -28,47 +28,7 @@ export default function LoginPage() {
         }
     };
 
-    const handleDemoLogin = async (role) => {
-        setLoading(true);
-        setError('');
-        const email = role === 'admin' ? 'admin@demo.com' : 'student@demo.com';
-        const password = 'demoPassword123!';
-        const name = role === 'admin' ? 'Demo Admin' : 'Demo Student';
 
-        try {
-            await login(email, password);
-            router.push('/dashboard');
-        } catch (err) {
-            console.error("Login attempt failed:", err.code, err.message);
-            // If user not found, create it (Auto-registration for Demo)
-            if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential' || err.code === "auth/invalid-login-credentials") {
-                try {
-                    await signup(email, password, name);
-                    router.push('/dashboard');
-                } catch (createErr) {
-                    console.error("Creation attempt failed:", createErr.code, createErr.message);
-                    if (createErr.code === 'auth/email-already-in-use') {
-                        // This implies login failed (wrong pass) but user exists.
-                        // We can't fix "wrong password" automatically without admin rights.
-                        setError(`Demo account exists but password doesn't match. Please delete user in Firebase Console.`);
-                    } else if (createErr.code === 'auth/operation-not-allowed') {
-                        setError('Email/Password provider is NOT enabled in Firebase Console.');
-                    } else {
-                        setError(`Create failed: ${createErr.code} - ${createErr.message}`);
-                    }
-                }
-            } else {
-                console.error(err);
-                if (err.code === 'auth/operation-not-allowed') {
-                    setError('Email/Password provider is NOT enabled in Firebase Console.');
-                } else {
-                    setError(`Login failed: ${err.code} - ${err.message}`);
-                }
-            }
-        } finally {
-            setLoading(false);
-        }
-    };
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
@@ -106,31 +66,7 @@ export default function LoginPage() {
 
                     {/* Form */}
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* Demo Buttons */}
-                        <div className="grid grid-cols-2 gap-3 mb-4">
-                            <button
-                                type="button"
-                                onClick={() => handleDemoLogin('student')}
-                                disabled={loading}
-                                className="py-2 px-4 bg-purple-50 hover:bg-purple-100 text-purple-700 text-sm font-semibold rounded-xl transition-colors border border-purple-200"
-                            >
-                                Demo Student
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => handleDemoLogin('admin')}
-                                disabled={loading}
-                                className="py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-xl transition-colors border border-gray-200"
-                            >
-                                Demo Admin
-                            </button>
-                        </div>
 
-                        <div className="relative flex items-center gap-4 my-2">
-                            <div className="flex-1 h-px bg-gray-100"></div>
-                            <span className="text-gray-400 text-[10px] uppercase font-bold tracking-wider">Or login with email</span>
-                            <div className="flex-1 h-px bg-gray-100"></div>
-                        </div>
 
                         <div>
                             <label className="block text-gray-700 text-sm font-medium mb-1.5">Email</label>

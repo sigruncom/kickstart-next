@@ -103,17 +103,7 @@ export default function MainContent() {
                                 {week.description}
                             </p>
 
-                            {/* Learners & Progress */}
-                            <div className="flex items-center gap-4">
-                                <div className="avatar-stack">
-                                    <div className="avatar bg-gradient-to-br from-blue-400 to-blue-600"></div>
-                                    <div className="avatar bg-gradient-to-br from-purple-400 to-purple-600"></div>
-                                    <div className="avatar bg-gradient-to-br from-pink-400 to-pink-600"></div>
-                                </div>
-                                <span className="text-sm text-text-secondary">
-                                    <span className="font-medium text-text-main dark:text-white">128 others</span> learning this week
-                                </span>
-                            </div>
+
                         </div>
 
                         {/* Resume Button */}
