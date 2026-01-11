@@ -37,39 +37,10 @@ export default function AdminDashboard() {
         if (!user) return;
         setLoading(true);
 
-        // INSTANT LOAD FOR DEMO: Bypass database connection completely
-        if (user.email?.toLowerCase() === 'admin@demo.com') {
-            const mockUsers = [
-                { id: '1', name: 'Alice Johnson', email: 'alice@example.com', role: 'active_student', cohort: 'Jan 2026', createdAt: new Date().toISOString() },
-                { id: '2', name: 'Bob Smith', email: 'bob@example.com', role: 'completed_student', cohort: 'Dec 2025', createdAt: new Date().toISOString() },
-                { id: '3', name: 'Charlie Brown', email: 'charlie@example.com', role: 'active_student', cohort: 'Jan 2026', createdAt: new Date().toISOString() },
-                { id: '4', name: 'Diana Prince', email: 'diana@example.com', role: 'active_student', cohort: 'Jan 2026', createdAt: new Date().toISOString() },
-                { id: '5', name: 'Evan Wright', email: 'evan@example.com', role: 'active_student', cohort: 'Jan 2026', createdAt: new Date().toISOString() },
-                { id: '6', name: 'Admin Demo', email: 'admin@demo.com', role: 'admin', cohort: 'Staff', createdAt: new Date().toISOString() }
-            ];
-            setUsers(mockUsers);
-            setStats({
-                totalUsers: mockUsers.length,
-                activeStudents: mockUsers.filter(u => u.role === 'active_student').length,
-                completedStudents: mockUsers.filter(u => u.role === 'completed_student').length,
-                recentLogins: 12
-            });
-
-            // Mock Schedule
-            const mockSchedule = Array.from({ length: 12 }, (_, i) => ({
-                week_index: i,
-                is_released: i === 0 ? 1 : 0, // Only Week 1 released
-                release_date: i === 0 ? new Date().toISOString() : null
-            }));
-            setSchedule(mockSchedule);
-
-            setLoading(false);
-            return;
-        }
-
         try {
             // 1. Fetch Users from Server API (Bypasses Client Security Rules)
-            const usersRes = await fetch('/api/admin/users');
+            // Added cache: 'no-store' to prevent displaying stale or cached data
+            const usersRes = await fetch('/api/admin/users', { cache: 'no-store' });
             if (usersRes.ok) {
                 const data = await usersRes.json();
                 setUsers(data.users || []);
