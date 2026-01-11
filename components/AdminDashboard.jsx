@@ -243,6 +243,11 @@ function UsersTab({ users, onUpdateRole, onRefresh, loading }) {
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef(null);
 
+    // Add User State
+    const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+    const [newUser, setNewUser] = useState({ name: '', email: '', role: 'active_student' });
+    const [creatingUser, setCreatingUser] = useState(false);
+
     const handleFileUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -282,6 +287,32 @@ function UsersTab({ users, onUpdateRole, onRefresh, loading }) {
         } finally {
             setUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
+    const handleCreateUser = async (e) => {
+        e.preventDefault();
+        setCreatingUser(true);
+
+        try {
+            const res = await fetch('/api/admin/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newUser)
+            });
+            const data = await res.json();
+
+            if (!res.ok) throw new Error(data.error);
+
+            alert(`User ${newUser.name} created! Password: kickstart2026!`);
+            setIsAddUserOpen(false);
+            setNewUser({ name: '', email: '', role: 'active_student' });
+            if (onRefresh) onRefresh();
+
+        } catch (err) {
+            alert(`Failed to create user: ${err.message}`);
+        } finally {
+            setCreatingUser(false);
         }
     };
 
@@ -328,9 +359,17 @@ function UsersTab({ users, onUpdateRole, onRefresh, loading }) {
                 />
 
                 <button
+                    onClick={() => setIsAddUserOpen(true)}
+                    className="btn-primary flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700"
+                >
+                    <User className="w-4 h-4" />
+                    <span>Add User</span>
+                </button>
+
+                <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={loading || uploading}
-                    className="btn-primary flex items-center gap-2"
+                    className="btn-secondary flex items-center gap-2"
                 >
                     {uploading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                     <span>{uploading ? 'Importing...' : 'Import CSV'}</span>
@@ -380,6 +419,81 @@ function UsersTab({ users, onUpdateRole, onRefresh, loading }) {
                     </table>
                 </div>
             </div>
+
+            {/* Add User Modal */}
+            <AnimatePresence>
+                {isAddUserOpen && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm"
+                            onClick={() => setIsAddUserOpen(false)}
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+                            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white dark:bg-surface-dark rounded-2xl shadow-2xl z-50 p-6 border border-gray-100 dark:border-gray-800"
+                        >
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-xl font-bold text-text-main dark:text-white">Add New User</h3>
+                                <button onClick={() => setIsAddUserOpen(false)}><X className="w-5 h-5 text-text-tertiary" /></button>
+                            </div>
+                            <form onSubmit={handleCreateUser} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-text-secondary mb-1">Full Name</label>
+                                    <input
+                                        required
+                                        type="text"
+                                        className="input-field"
+                                        value={newUser.name}
+                                        onChange={e => setNewUser({ ...newUser, name: e.target.value })}
+                                        placeholder="e.g. John Doe"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-text-secondary mb-1">Email Address</label>
+                                    <input
+                                        required
+                                        type="email"
+                                        className="input-field"
+                                        value={newUser.email}
+                                        onChange={e => setNewUser({ ...newUser, email: e.target.value })}
+                                        placeholder="john@example.com"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-text-secondary mb-1">Role</label>
+                                    <select
+                                        className="input-field"
+                                        value={newUser.role}
+                                        onChange={e => setNewUser({ ...newUser, role: e.target.value })}
+                                    >
+                                        <option value="active_student">Active Student</option>
+                                        <option value="completed_student">Completed</option>
+                                        <option value="admin">Admin</option>
+                                    </select>
+                                </div>
+
+                                <div className="pt-2 flex gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsAddUserOpen(false)}
+                                        className="btn-secondary flex-1"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={creatingUser}
+                                        className="btn-primary flex-1 flex justify-center"
+                                    >
+                                        {creatingUser ? <RefreshCw className="animate-spin" /> : 'Create User'}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 }
