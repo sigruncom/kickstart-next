@@ -44,6 +44,7 @@ export async function GET(request) {
 export async function POST(request) {
     // Check if Admin SDK is initialized
     if (!adminAuth || !adminDb) {
+        console.error('Admin SDK not initialized');
         return NextResponse.json({
             error: 'Server Misconfigured: FIREBASE_SERVICE_ACCOUNT_KEY missing.'
         }, { status: 500 });
@@ -60,22 +61,50 @@ export async function POST(request) {
             return NextResponse.json({ error: 'Email and Name are required' }, { status: 400 });
         }
 
+        console.log(`[Admin POST] Creating user: ${email} (${name})`);
+
+        // Debugging Project ID to ensure we are targeting the right project
+        try {
+            // Access internal credential details if available to verify project
+            const projectId = adminAuth.app.options.credential?.projectId || adminAuth.app.options.projectId;
+            console.log(`[Admin POST] Target Project ID: ${projectId}`);
+        } catch (e) {
+            console.warn('[Admin POST] Could not retrieve Project ID from app options');
+        }
+
         // 1. Create in Firebase Auth
-        const userRecord = await adminAuth.createUser({
-            email,
-            emailVerified: false,
-            displayName: name,
-            password: 'kickstart2026!' // Default password
-        });
+        let userRecord;
+        try {
+            console.log('[Admin POST] Attempting adminAuth.createUser...');
+            userRecord = await adminAuth.createUser({
+                email,
+                emailVerified: false,
+                displayName: name,
+                password: 'kickstart2026!' // Default password
+            });
+            console.log(`[Admin POST] Auth User created: ${userRecord.uid}`);
+        } catch (authError) {
+            console.error('[Admin POST] Auth Creation Failed:', authError);
+            throw new Error(`Auth Error: ${authError.message}`);
+        }
 
         // 2. Create in Firestore
-        await adminDb.collection('users').doc(userRecord.uid).set({
-            email,
-            name,
-            role: role || 'active_student',
-            cohort: 'Jan 2026', // Default
-            createdAt: new Date().toISOString()
-        });
+        try {
+            console.log('[Admin POST] Attempting adminDb.collection("users").set...');
+            await adminDb.collection('users').doc(userRecord.uid).set({
+                email,
+                name,
+                role: role || 'active_student',
+                cohort: 'Jan 2026', // Default
+                createdAt: new Date().toISOString()
+            });
+            console.log('[Admin POST] Firestore doc created.');
+        } catch (dbError) {
+            console.error('[Admin POST] Firestore Write Failed:', dbError);
+            // If we fail here, we might want to delete the user from Auth to keep consistency?
+            // For now, just report it.
+            throw new Error(`Firestore Error: ${dbError.message} (Code: ${dbError.code})`);
+        }
 
         console.log(`[Email Sent] Welcome ${name}! Temp pwd: kickstart2026!`);
 
@@ -85,8 +114,9 @@ export async function POST(request) {
         });
 
     } catch (error) {
-        console.error('Create user error:', error);
+        console.error('Create user final error:', error);
         return NextResponse.json({
+            // Return the explicit error message to the frontend
             error: error.message || 'Failed to create user'
         }, { status: 500 });
     }
