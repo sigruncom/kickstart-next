@@ -68,35 +68,37 @@ export default function AdminDashboard() {
         }
 
         try {
-            // Use Client SDK for fetching users & schedule
-            const { collection, getDocs } = await import('firebase/firestore');
-            const { db } = await import('../lib/firebase');
+            // 1. Fetch Users from Server API (Bypasses Client Security Rules)
+            const usersRes = await fetch('/api/admin/users');
+            if (usersRes.ok) {
+                const data = await usersRes.json();
+                setUsers(data.users || []);
+            } else {
+                console.error("Failed to fetch users via API");
+            }
 
-            const [usersSnap, scheduleSnap] = await Promise.all([
-                getDocs(collection(db, 'users')),
-                getDocs(collection(db, 'content_schedule'))
-            ]);
+            // 2. Fetch Schedule via Client SDK (Assumes public read or student read)
+            // If this fails due to permissions, we'll log it but at least users are loaded.
+            try {
+                const { collection, getDocs } = await import('firebase/firestore');
+                const { db } = await import('../lib/firebase');
+                const scheduleSnap = await getDocs(collection(db, 'content_schedule'));
+                const fetchedSchedule = [];
+                scheduleSnap.forEach(doc => {
+                    fetchedSchedule.push(doc.data());
+                });
+                setSchedule(fetchedSchedule);
+            } catch (scheduleErr) {
+                console.warn("Schedule fetch failed (likely permissions), using fallback/empty.", scheduleErr);
+                // Fallback or empty
+                setSchedule([]);
+            }
 
-            const fetchedUsers = [];
-            usersSnap.forEach(doc => {
-                fetchedUsers.push({ id: doc.id, ...doc.data() });
-            });
-
-            const fetchedSchedule = [];
-            scheduleSnap.forEach(doc => {
-                fetchedSchedule.push(doc.data());
-            });
-
-            const usersData = { users: fetchedUsers };
-            setUsers(usersData.users || []);
-            setSchedule(fetchedSchedule);
             setAggregatedInputs([]);
 
         } catch (err) {
             console.error('Failed to load dashboard data:', err);
-            if (err.code === 'permission-denied') {
-                alert("Permission denied. Check Firestore Security Rules.");
-            }
+            // Don't show alert for permission denied since we are handling it progressively
         } finally {
             setLoading(false);
         }
