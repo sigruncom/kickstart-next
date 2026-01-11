@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const router = useRouter();
+  console.log("DEBUG KEY:", process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
 
   useEffect(() => {
     // Redirect to dashboard (which handles auth redirect if needed)
