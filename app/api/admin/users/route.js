@@ -84,25 +84,29 @@ export async function POST(request) {
             });
             console.log(`[Admin POST] Auth User created: ${userRecord.uid}`);
         } catch (authError) {
-            console.error('[Admin POST] Auth Creation Failed:', authError);
-            throw new Error(`Auth Error: ${authError.message}`);
+            if (authError.code === 'auth/email-already-in-use') {
+                console.log(`[Admin POST] User ${email} already exists in Auth. Fetching existing profile...`);
+                // Recover by fetching the existing user
+                userRecord = await adminAuth.getUserByEmail(email);
+            } else {
+                console.error('[Admin POST] Auth Creation Failed:', authError);
+                throw new Error(`Auth Error: ${authError.message}`);
+            }
         }
 
-        // 2. Create in Firestore
+        // 2. Create/Update in Firestore
         try {
-            console.log('[Admin POST] Attempting adminDb.collection("users").set...');
+            console.log(`[Admin POST] Ensuring Firestore doc for ${userRecord.uid}...`);
             await adminDb.collection('users').doc(userRecord.uid).set({
                 email,
                 name,
                 role: role || 'active_student',
                 cohort: 'Jan 2026', // Default
-                createdAt: new Date().toISOString()
-            });
-            console.log('[Admin POST] Firestore doc created.');
+                updatedAt: new Date().toISOString() // Track when we last touched this
+            }, { merge: true }); // Merge ensures we don't accidentally wipe data if it partially exists
+            console.log('[Admin POST] Firestore doc wrote successfully.');
         } catch (dbError) {
             console.error('[Admin POST] Firestore Write Failed:', dbError);
-            // If we fail here, we might want to delete the user from Auth to keep consistency?
-            // For now, just report it.
             throw new Error(`Firestore Error: ${dbError.message} (Code: ${dbError.code})`);
         }
 
