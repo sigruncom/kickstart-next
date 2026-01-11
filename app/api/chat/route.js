@@ -8,20 +8,22 @@ export const runtime = 'edge';
 
 export async function POST(req) {
     try {
-        // We support both standard Vercel AI SDK 'messages' and our custom 'message/context' payload
         const body = await req.json();
-        const { message, context } = body;
+        const { messages, message, context } = body;
 
         // 1. Construct System Instruction
+        // Ensure context exists if we are in manual mode
+        const safeContext = context || {};
+
         const systemInstruction = `
 You are an expert business coach for the "SOMBA Kickstart" program.
 Your goal is to help the user build their online course business.
 
 USER CONTEXT:
-- Ideal Client: ${context?.idealClient || "Not defined yet (ask them to define it)"}
-- Course Name: ${context?.courseName || "Not named yet"}
-- Big Promise: ${context?.bigPromise || "Not defined yet"}
-- Current Focus: ${context?.currentStep || "General coaching"}
+- Ideal Client: ${safeContext.idealClient || "Not defined yet (ask them to define it)"}
+- Course Name: ${safeContext.courseName || "Not named yet"}
+- Big Promise: ${safeContext.bigPromise || "Not defined yet"}
+- Current Focus: ${safeContext.currentStep || "General coaching"}
 
 GUIDELINES:
 - Be encouraging, concise, and action-oriented.
@@ -29,14 +31,21 @@ GUIDELINES:
 - IF they haven't defined their Ideal Client, guide them to do so.
 `;
 
-        // 2. Generate content stream with Vercel AI SDK standard 'streamText'
+        // 2. Prepare Messages
+        // If 'messages' is provided (standard Vercel AI SDK), use it.
+        // Otherwise, construct it from the single 'message' (custom frontend).
+        const coreMessages = messages || [
+            { role: 'user', content: message || "Hello" }
+        ];
+
+        // 3. Call Gemini
         const result = await streamText({
             model: google('gemini-1.5-flash'),
             system: systemInstruction,
-            prompt: message || "Hello", // Handle explicit single message
+            messages: coreMessages,
         });
 
-        // 3. Return the stream
+        // 4. Return Stream
         return result.toDataStreamResponse();
 
     } catch (error) {
