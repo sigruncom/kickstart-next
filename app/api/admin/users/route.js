@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
+import crypto from 'crypto';
 
 // Helper to verify admin token
 async function verifyAdmin(request) {
