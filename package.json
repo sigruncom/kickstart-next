@@ -9,8 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.6",
     "@google/generative-ai": "^0.24.1",
-    "ai": "^6.0.27",
+    "ai": "^3.4.2",
     "csv-parser": "^3.2.0",
     "firebase": "^12.7.0",
     "firebase-admin": "^13.6.0",

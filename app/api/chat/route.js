@@ -1,14 +1,16 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { GoogleGenerativeAIStream, StreamingTextResponse } from 'ai';
+import { google } from '@ai-sdk/google';
+import { streamText } from 'ai';
 
-// Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+// Initialize Gemini is handled by @ai-sdk/google using process.env.GOOGLE_GENERATIVE_AI_API_KEY or GEMINI_API_KEY
+// Ensure GEMINI_API_KEY is defined in .env
 
 export const runtime = 'edge';
 
 export async function POST(req) {
     try {
-        const { message, context } = await req.json();
+        // We support both standard Vercel AI SDK 'messages' and our custom 'message/context' payload
+        const body = await req.json();
+        const { message, context } = body;
 
         // 1. Construct System Instruction
         const systemInstruction = `
@@ -27,17 +29,15 @@ GUIDELINES:
 - IF they haven't defined their Ideal Client, guide them to do so.
 `;
 
-        // 2. Generate content stream with Gemini
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-        const prompt = `${systemInstruction}\n\nUser: ${message}\n\nCoach:`;
+        // 2. Generate content stream with Vercel AI SDK standard 'streamText'
+        const result = await streamText({
+            model: google('gemini-1.5-flash'),
+            system: systemInstruction,
+            prompt: message || "Hello", // Handle explicit single message
+        });
 
-        const geminiStream = await model.generateContentStream(prompt);
-
-        // 3. Create a stream using Vercel AI SDK
-        const stream = GoogleGenerativeAIStream(geminiStream);
-
-        // 4. Return the stream
-        return new StreamingTextResponse(stream);
+        // 3. Return the stream
+        return result.toDataStreamResponse();
 
     } catch (error) {
         console.error('Chat API Error:', error);
