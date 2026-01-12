@@ -36,26 +36,15 @@ export const AuthProvider = ({ children }) => {
             if (user) {
                 // Real-time listener for profile
                 unsubscribeProfile = onSnapshot(doc(db, 'users', user.uid), (docSnap) => {
-                    const isSuperAdminEmail = user.email === 'sigrun+admin@sigrun.com' || user.email === 'sigrun@sigrun.com';
-
                     if (docSnap.exists()) {
-                        const data = docSnap.data();
-                        console.log("AuthContext: Profile loaded:", data.role);
-
-                        // Auto-promote specific emails to admin (Bootstrapping)
-                        if (isSuperAdminEmail && data.role !== 'admin') {
-                            console.log("AuthContext: Auto-promoting Super Admin...");
-                            setDoc(doc(db, 'users', user.uid), { role: 'admin' }, { merge: true });
-                            data.role = 'admin';
-                        }
-
-                        setUserProfile(data);
+                        console.log("AuthContext: Profile loaded:", docSnap.data().role);
+                        setUserProfile(docSnap.data());
                     } else {
                         console.log("AuthContext: creating default profile...");
                         const newProfile = {
                             email: user.email,
                             name: user.displayName || '',
-                            role: isSuperAdminEmail ? 'admin' : 'active_student',
+                            role: 'active_student',
                             cohort: 'Jan 2026',
                             createdAt: new Date().toISOString()
                         };

@@ -57,7 +57,7 @@ export async function POST(request) {
 
     try {
         const { email, name, role } = await request.json();
-
+        console.log(`[Admin POST] Payload received - Email: ${email}, Name: ${name}, Role: ${role}`);
         if (!email || !name) {
             return NextResponse.json({ error: 'Email and Name are required' }, { status: 400 });
         }
