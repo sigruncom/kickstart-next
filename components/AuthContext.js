@@ -8,7 +8,7 @@ import {
     sendPasswordResetEmail,
     updateProfile
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 
 const AuthContext = createContext({});
@@ -21,62 +21,65 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        console.log("AuthContext: Provider mounted, waiting for auth...");
-        const timeoutId = setTimeout(() => {
-            console.warn("AuthContext: Auth timeout reached, forcing loading false");
-            setLoading(false);
-        }, 5000);
+        let unsubscribeProfile = null;
 
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
-            console.log("AuthContext: Auth state changed:", user?.email || "No user");
+        const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+            console.log("AuthContext: Auth state changed:", user?.email);
             setUser(user);
 
-            try {
-                if (user) {
-                    // Fetch user profile from Firestore with timeout race
-                    try {
-                        const profilePromise = getDoc(doc(db, 'users', user.uid));
-                        const timeoutPromise = new Promise((_, reject) =>
-                            setTimeout(() => reject(new Error('Profile fetch timeout')), 4000)
-                        );
+            // Clean up previous profile listener
+            if (unsubscribeProfile) {
+                unsubscribeProfile();
+                unsubscribeProfile = null;
+            }
 
-                        const userDoc = await Promise.race([profilePromise, timeoutPromise]);
+            if (user) {
+                // Real-time listener for profile
+                unsubscribeProfile = onSnapshot(doc(db, 'users', user.uid), (docSnap) => {
+                    const isSuperAdminEmail = user.email === 'sigrun+admin@sigrun.com' || user.email === 'sigrun@sigrun.com';
 
-                        if (userDoc.exists()) {
-                            setUserProfile(userDoc.data());
-                        } else {
-                            const newProfile = {
-                                email: user.email,
-                                role: 'active_student',
-                                createdAt: new Date().toISOString()
-                            };
-                            try {
-                                await setDoc(doc(db, 'users', user.uid), newProfile);
-                            } catch (e) {
-                                console.error("Error creating profile:", e);
-                            }
-                            setUserProfile(newProfile);
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        console.log("AuthContext: Profile loaded:", data.role);
+
+                        // Auto-promote specific emails to admin (Bootstrapping)
+                        if (isSuperAdminEmail && data.role !== 'admin') {
+                            console.log("AuthContext: Auto-promoting Super Admin...");
+                            setDoc(doc(db, 'users', user.uid), { role: 'admin' }, { merge: true });
+                            data.role = 'admin';
                         }
-                    } catch (error) {
-                        console.error("Error fetching user profile:", error);
-                        setUserProfile({
+
+                        setUserProfile(data);
+                    } else {
+                        console.log("AuthContext: creating default profile...");
+                        const newProfile = {
                             email: user.email,
-                            role: 'active_student'
-                        });
+                            name: user.displayName || '',
+                            role: isSuperAdminEmail ? 'admin' : 'active_student',
+                            cohort: 'Jan 2026',
+                            createdAt: new Date().toISOString()
+                        };
+                        // Fire and forget creation
+                        setDoc(doc(db, 'users', user.uid), newProfile).catch(console.error);
+                        setUserProfile(newProfile);
                     }
-                } else {
-                    setUserProfile(null);
-                }
-            } finally {
-                clearTimeout(timeoutId);
+                    setLoading(false);
+                }, (error) => {
+                    console.error("AuthContext: Profile error", error);
+                    // Fallback to student only on error
+                    setUserProfile({ email: user.email, role: 'active_student' });
+                    setLoading(false);
+                });
+            } else {
+                setUserProfile(null);
                 setLoading(false);
             }
         });
 
         return () => {
-            clearTimeout(timeoutId);
-            unsubscribe();
-        }
+            if (unsubscribeProfile) unsubscribeProfile();
+            unsubscribeAuth();
+        };
     }, []);
 
     const login = (email, password) => signInWithEmailAndPassword(auth, email, password);
