@@ -282,7 +282,7 @@ function UsersTab({ users, onUpdateRole, onRefresh, loading }) {
                 alert(`User ${newUser.name} created! Password reset email sent to ${newUser.email}.`);
             } catch (emailErr) {
                 console.error("Reset email failed:", emailErr);
-                alert(`User created, but failed to send email. Manual reset required.`);
+                alert(`User created, but failed to send email: ${emailErr.message}\n\nThis usually means 'kickstart.sigrun.com' is not in your Firebase Authorized Domains.`);
             }
             setIsAddUserOpen(false);
             setNewUser({ name: '', email: '', role: 'active_student' });
