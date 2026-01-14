@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+'use client';
+import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import MainContent from '../../components/MainContent';
 import { useAuth } from '../../components/AuthContext';
