@@ -128,7 +128,7 @@ export default function AdminDashboard() {
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 ml-72 p-8 pt-6">
             <div className="mb-8">
                 <h1 className="text-3xl font-bold text-text-main dark:text-white mb-2">
-                    {TABS.find(t => t.id === activeTab)?.label}
+                    {TABS.find(t => t.id === activeTab)?.label} <span className="text-xs text-gray-400 font-normal align-middle">(v1.1)</span>
                 </h1>
                 <p className="text-text-secondary">Manage users, content, and settings.</p>
             </div>
